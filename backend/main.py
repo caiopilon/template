@@ -2,15 +2,21 @@ from typing import List
 
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
+from celery import Celery
 
 from database import engine, Base, SessionLocal
-import schemas
-import crud
+from api import schemas, crud
 
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+celery = Celery(
+    __name__,
+    broker="redis://127.0.0.1:6379/0",
+    backend="redis://127.0.0.1:6379/0"
+)
 
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
@@ -47,4 +53,3 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-

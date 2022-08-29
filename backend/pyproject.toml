@@ -5,15 +5,16 @@ description = ""
 authors = ["caio pilon <caiofpilon@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 fastapi = "^0.79"
 uvicorn = "^0.18"
 SQLAlchemy = "^1.4"
 psycopg2-binary = "^2.9"
 python-dotenv = "^0.20"
-celery = "^5.1"
-flower = "^1.0"
-redis = "^3.5"
+celery = "^5.2"
+flower = "^1.2"
+redis = "^4.3"
+alembic = "^1.8"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.4"

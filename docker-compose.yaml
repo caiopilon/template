@@ -1,55 +1,72 @@
-version: "3.3"
+version: "3.5"
 
 services:
 
-  postgres:
-    image: postgres:14.5
-    env_file:
-      - .env
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-
-  backend:
-    depends_on:
-      - postgres
-    env_file:
-      - .env
+  api:
     build: 
       context: ./backend
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+      dockerfile: ./compose/Dockerfile
+    command: /start_api
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
     ports:
-      - "8000:8000"
+      - 8010:8000
+    volumes:
+      - ./backend:/app
+
+  db:
+    image: postgres:14.5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: app
 
   redis:
     image: redis:6.2-alpine
 
-  celeryworker:
+  worker:
     build: 
       context: ./backend
-    command: celery -A celery_worker.celery worker --loglevel=info
-    environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      dockerfile: ./compose/Dockerfile
+    command: /start_worker
+    env_file:
+      - .env
     depends_on:
-      - backend
       - redis
-  
-  # flower:
-  #   build: 
-  #     context: ./backend
-  #   command: celery -A celery_worker.celery flower --port=5555
-  #   ports:
-  #     - 5556:5555
-  #   depends_on:
-  #     - backend
-  #     - redis
-  #     - celeryworker
+      - db
+    volumes:
+      - ./backend:/app
+      
+  beat:
+    build:
+      context: ./backend
+      dockerfile: ./compose/Dockerfile
+    command: /start_beat
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./backend:/app
+
+  flower:
+    build:
+      context: ./backend
+      dockerfile: ./compose/Dockerfile
+    command: /start_flower
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    ports:
+      - 5557:5555
 
 volumes:
   postgres-data: {}
